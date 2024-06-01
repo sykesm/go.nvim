@@ -38,12 +38,21 @@ function M.toggle()
   if enabled == true then
     log('toggle codelens disable', enabled)
     enabled = false
-    vim.lsp.codelens.clear()
+    M.clear()
   else
     log('toggle codelens enable', enabled)
     enabled = true
     M.refresh()
   end
+end
+
+function M.clear()
+  log('clear codelens')
+  local gopls = require('go.lsp').client()
+  if not gopls then
+    return
+  end
+  vim.lsp.codelens.clear(gopls.id, 0)
 end
 
 function M.refresh()
@@ -52,11 +61,12 @@ function M.refresh()
   if not gopls then -- and gopls.server_capabilities.codeLensProvider then
     return
   end
-  if _GO_NVIM_CFG.lsp_codelens == true then
-    vim.lsp.codelens.refresh()
+  if _GO_NVIM_CFG.lsp_codelens ~= true then
+    M.clear()
+  elseif vim.fn.has('nvim-0.10') == 1 then
+    vim.lsp.codelens.refresh({ bufnr = 0 })
   else
-    log('refresh codelens')
-    vim.lsp.codelens.clear()
+    vim.lsp.codelens.refresh()
   end
 end
 

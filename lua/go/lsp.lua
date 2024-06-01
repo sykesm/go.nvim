@@ -8,11 +8,7 @@ local diagnostic_map = function(bufnr)
 end
 
 if vim.fn.has('nvim-0.8.3') ~= 1 then
-  return vim.notify(
-    'Please upgrade to neovim 0.8.3 or above',
-    vim.log.levels.ERROR,
-    { title = 'Error' }
-  )
+  return vim.notify('Please upgrade to neovim 0.8.3 or above', vim.log.levels.ERROR, { title = 'Error' })
 end
 
 local codelens_enabled = false
@@ -39,7 +35,11 @@ local on_attach = function(client, bufnr)
   end
 
   if _GO_NVIM_CFG.lsp_codelens then
-    vim.lsp.codelens.refresh()
+    if vim.fn.has('nvim-0.10') == 1 then
+      vim.lsp.codelens.refresh({ bufnr = bufnr })
+    else
+      vim.lsp.codelens.refresh()
+    end
   end
   local keymaps
   if _GO_NVIM_CFG.lsp_keymaps == true then
@@ -104,49 +104,48 @@ local on_attach = function(client, bufnr)
     local semantic = client.config.capabilities.textDocument.semanticTokens
     local provider = client.server_capabilities.semanticTokensProvider
     if semantic then
-      client.server_capabilities.semanticTokensProvider =
-        vim.tbl_deep_extend('force', provider or {}, {
-          full = true,
-          legend = {
-            tokenTypes = {
-              'namespace',
-              'type',
-              'class',
-              'enum',
-              'interface',
-              'struct',
-              'typeParameter',
-              'parameter',
-              'variable',
-              'property',
-              'enumMember',
-              'event',
-              'function',
-              'method',
-              'macro',
-              'keyword',
-              'modifier',
-              'comment',
-              'string',
-              'number',
-              'regexp',
-              'operator',
-            },
-            tokenModifiers = {
-              'declaration',
-              'definition',
-              'readonly',
-              'static',
-              'deprecated',
-              'abstract',
-              'async',
-              'modification',
-              'documentation',
-              'defaultLibrary',
-            },
+      client.server_capabilities.semanticTokensProvider = vim.tbl_deep_extend('force', provider or {}, {
+        full = true,
+        legend = {
+          tokenTypes = {
+            'namespace',
+            'type',
+            'class',
+            'enum',
+            'interface',
+            'struct',
+            'typeParameter',
+            'parameter',
+            'variable',
+            'property',
+            'enumMember',
+            'event',
+            'function',
+            'method',
+            'macro',
+            'keyword',
+            'modifier',
+            'comment',
+            'string',
+            'number',
+            'regexp',
+            'operator',
           },
-          range = true,
-        })
+          tokenModifiers = {
+            'declaration',
+            'definition',
+            'readonly',
+            'static',
+            'deprecated',
+            'abstract',
+            'async',
+            'modification',
+            'documentation',
+            'defaultLibrary',
+          },
+        },
+        range = true,
+      })
     end
   end
 end
@@ -161,13 +160,7 @@ local extend_config = function(gopls, opts)
     else
       if type(gopls[key]) ~= type(value) and key ~= 'handlers' then
         vim.notify(
-          'gopls setup for '
-            .. key
-            .. ' type:'
-            .. type(gopls[key])
-            .. ' is not '
-            .. type(value)
-            .. vim.inspect(value)
+          'gopls setup for ' .. key .. ' type:' .. type(gopls[key]) .. ' is not ' .. type(value) .. vim.inspect(value)
         )
       end
       gopls[key] = value
@@ -539,12 +532,7 @@ function M.document_symbols(opts)
   local symbols
   local c = M.client()
   if c ~= nil then
-    return c.request_sync(
-      'textDocument/documentSymbol',
-      params,
-      opts.timeout or 1000,
-      vim.api.nvim_get_current_buf()
-    )
+    return c.request_sync('textDocument/documentSymbol', params, opts.timeout or 1000, vim.api.nvim_get_current_buf())
   end
 end
 
@@ -571,12 +559,7 @@ function M.watchFileChanged(fname, params)
         -- log(err, result, ctx)
         if err then
           -- the request was send to all clients and some may not support
-          log(
-            'failed to workspace reloaded:'
-              .. vim.inspect(err)
-              .. vim.inspect(ctx)
-              .. vim.inspect(result)
-          )
+          log('failed to workspace reloaded:' .. vim.inspect(err) .. vim.inspect(ctx) .. vim.inspect(result))
         else
           vim.notify('workspace reloaded')
         end
